@@ -9,14 +9,16 @@ using namespace std;
 #define MAX 100005
 #define INF 1000000000
 
-vector<pii> adj[MAX];
-int dist[MAX];
+vector<pii> adj[MAX], radj[MAX];
+int dist[MAX], rdist[MAX];
 
-void uniform_cost_search(int s, int t) {
-    priority_queue<pii, vector<pii>, greater<pii>> pq;
+void bidirectional_search(int s, int t) {
+    priority_queue<pii, vector<pii>, greater<pii>> pq, rpq;
     pq.push(mp(0, s));
+    rpq.push(mp(0, t));
     dist[s] = 0;
-    while(!pq.empty()) {
+    rdist[t] = 0;
+    while(!pq.empty() && !rpq.empty()) {
         int u = pq.top().S;
         pq.pop();
         for(auto v : adj[u]) {
@@ -25,8 +27,26 @@ void uniform_cost_search(int s, int t) {
                 pq.push(mp(dist[v.F], v.F));
             }
         }
+        if(dist[u] + rdist[u] >= dist[t]) {
+            break;
+        }
+        int ru = rpq.top().S;
+        rpq.pop();
+        for(auto rv : radj[ru]) {
+            if(rdist[rv.F] > rdist[ru] + rv.S) {
+                rdist[rv.F] = rdist[ru] + rv.S;
+                rpq.push(mp(rdist[rv.F], rv.F));
+            }
+        }
+        if(dist[ru] + rdist[ru] >= dist[t]) {
+            break;
+        }
     }
-    cout << "Minimum cost from " << s << " to " << t << " is = " << dist[t] << endl;
+    int ans = INF;
+    for(int i = 1; i <= t; i++) {
+        ans = min(ans, dist[i] + rdist[i]);
+    }
+    cout << "Minimum cost from " << s << " to " << t << " is = " << ans << endl;
 }
 
 int main() {
@@ -36,11 +56,14 @@ int main() {
         cin >> u >> v >> w;
         adj[u].pb(mp(v, w));
         adj[v].pb(mp(u, w));
+        radj[u].pb(mp(v, w));
+        radj[v].pb(mp(u, w));
     }
     cin >> s >> t;
     for(int i = 1; i <= n; i++) {
         dist[i] = INF;
+        rdist[i] = INF;
     }
-    uniform_cost_search(s, t);
+    bidirectional_search(s, t);
     return 0;
 }
